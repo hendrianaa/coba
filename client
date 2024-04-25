@@ -1,0 +1,36 @@
+import socket
+
+def main():
+    # Create a UDP socket
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    # Bind the socket to a random port
+    client_socket.bind(('localhost', 0))
+
+    # Connect to the server
+    server_address = ('localhost', 12345)
+    client_socket.sendto(b'connect', server_address)
+
+    while True:
+        # Receive the color from the server
+        color, server_address = client_socket.recvfrom(1024)
+        color = color.decode()
+
+        # Print the color received
+        print("\nReceived color:", color)
+
+        # Prompt the user to input the color in Indonesian
+        guess = input("Guess the color in Indonesian: ")
+
+        # Send the guess to the server
+        client_socket.sendto(guess.encode(), server_address)
+
+        # Receive feedback from the server
+        feedback, _ = client_socket.recvfrom(1024)
+        feedback = feedback.decode()
+
+        # Print the feedback
+        print("Feedback:", feedback)
+
+if __name__ == "__main__":
+    main()
