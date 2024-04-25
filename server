@@ -1,0 +1,71 @@
+import socket
+import random
+import time
+
+# List of random colors in English
+colors_en = ['red', 'blue', 'green', 'yellow']
+
+# List of colors in Indonesian
+colors_id = ['merah', 'biru', 'hijau', 'kuning']
+
+def generate_color():
+    return random.choice(colors_en)
+
+def main():
+    global server_socket  # Define server_socket as a global variable
+
+    # Create a UDP socket
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    # Bind the socket to the server address and port
+    server_address = ('localhost', 12345)
+    server_socket.bind(server_address)
+
+    print("Server is running...")
+
+    clients = []  # List to store client addresses
+
+    while True:
+        # Send a random color word in English to all clients
+        color_en = generate_color()
+        print("Server sending color:", color_en)
+        for client in clients:
+            server_socket.sendto(color_en.encode(), client[0])
+
+        # Receive responses from clients for 5 seconds
+        server_socket.settimeout(5)
+        start_time = time.time()
+        while time.time() - start_time < 5:
+            try:
+                # Receive messages from clients
+                data, address = server_socket.recvfrom(1024)
+                color_id = data.decode().strip().lower()
+                # Check the client's answer
+                if color_id in colors_id:
+                    print("Received from", address, ":", color_id)
+                    # Send feedback "100" if the answer is correct
+                    server_socket.sendto(b'100', address)
+                else:
+                    print("Received from", address, ":", color_id, "(Incorrect)")
+                    # Send feedback "0" if the answer is wrong
+                    server_socket.sendto(b'0', address)
+            except socket.timeout:
+                pass
+
+        # Remove clients that do not respond within the specified time
+        clients = [client for client in clients if time.time() - client[1] < 5]
+
+def run_server():
+    global server_socket  # Define server_socket as a global variable
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nServer stopped.")
+    except Exception as e:
+        print("An error occurred:", e)
+    finally:
+        # Close the socket when the server stops
+        server_socket.close()
+
+if __name__ == "__main__":
+    run_server()
